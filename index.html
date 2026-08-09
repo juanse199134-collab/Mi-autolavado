@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Mi Autolavado</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#0f172a;padding-bottom:78px}
+header{background:#0f172a;color:#fff;padding:20px 16px}.brand{font-size:24px;font-weight:800}.sub{opacity:.8;margin-top:4px}
+main{max-width:760px;margin:auto;padding:14px}.page{display:none}.page.active{display:block}
+.card{background:#fff;border-radius:17px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0001}
+h2{margin:0 0 13px;font-size:20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#e2e8f0;border-radius:13px;padding:13px}.stat span{font-size:13px;color:#475569}.stat b{display:block;font-size:21px;margin-top:5px}
+label{display:block;font-weight:700;margin:11px 0 6px}input,select,button{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;background:#fff}
+button{border:0;background:#0f172a;color:#fff;font-weight:700;margin-top:10px}.secondary{background:#475569}.danger{background:#b91c1c}.success{background:#166534}
+.progress{height:12px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin:9px 0}.bar{height:100%;width:0;background:#0f172a}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.tabs button{margin:0;background:#cbd5e1;color:#0f172a}.tabs button.active{background:#0f172a;color:#fff}
+.service{padding:12px 0;border-bottom:1px solid #e2e8f0}.service:last-child{border:0}.small{font-size:13px;color:#64748b}.commission{font-weight:700}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #cbd5e1;display:grid;grid-template-columns:repeat(4,1fr);z-index:10}
+.nav button{background:#fff;color:#475569;margin:0;border-radius:0;padding:10px 4px;font-size:12px}.nav button.active{color:#0f172a;font-weight:800}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions button{margin:0}
+.price-row{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center;margin:8px 0}
+.badge{display:inline-block;padding:5px 8px;border-radius:8px;background:#e2e8f0;font-size:12px}
+</style>
+</head>
+<body>
+<header><div class="brand">🚗 MI AUTOLAVADO</div><div class="sub">Control de servicios y ganancias</div></header>
+<main>
+<section id="home" class="page active">
+<div class="card"><h2>💰 Resumen de hoy</h2><div class="grid">
+<div class="stat"><span>Servicios</span><b id="dCount">0</b></div><div class="stat"><span>Total vendido</span><b id="dSales">$0</b></div>
+<div class="stat"><span>Mi comisión</span><b id="dComm">$0</b></div><div class="stat"><span>Promedio/servicio</span><b id="dAvg">$0</b></div>
+</div></div>
+<div class="card"><h2>🎯 Meta diaria</h2><b id="goalLabel">Meta: $0</b><div class="progress"><div class="bar" id="goalBar"></div></div><div class="small" id="goalText">Configura una meta en Ajustes.</div></div>
+<div class="card"><h2>⚡ Acciones rápidas</h2><button onclick="show('register')">➕ Registrar servicio</button><button class="secondary" onclick="show('history')">🧾 Ver historial</button></div>
+</section>
+
+<section id="register" class="page">
+<div class="card"><h2>➕ Registrar servicio</h2>
+<label>Servicio</label><select id="service"></select>
+<label>Valor ($)</label><input id="value" type="number" min="0" inputmode="numeric" placeholder="Ej. 30000">
+<div class="small" id="priceHint"></div>
+<label>Placa del vehículo</label>
+<input id="plate" type="text" maxlength="10" autocapitalize="characters" placeholder="Ej. ABC123" oninput="this.value=this.value.toUpperCase()">
+<label>Foto del vehículo</label>
+<input id="photo" type="file" accept="image/*" capture="environment">
+<div class="small">Puedes tomar la foto directamente con la cámara del celular.</div>
+<div id="photoPreview"></div>
+<label>Observación</label><input id="note" type="text" placeholder="Ej. Camioneta blanca">
+<button onclick="addService()">Guardar servicio</button>
+</div>
+<div class="card"><h2>💡 Tu comisión</h2><div>Con una comisión del <b id="rateText">40%</b>, este servicio te genera:</div><h2 id="preview">$0</h2></div>
+</section>
+
+<section id="stats" class="page">
+<div class="card"><h2>📊 Estadísticas</h2><div class="tabs">
+<button id="pday" class="active" onclick="setPeriod('day')">Hoy</button><button id="pweek" onclick="setPeriod('week')">Semana</button><button id="pmonth" onclick="setPeriod('month')">Mes</button></div>
+<div class="grid" style="margin-top:12px"><div class="stat"><span>Servicios</span><b id="sCount">0</b></div><div class="stat"><span>Vendido</span><b id="sSales">$0</b></div><div class="stat"><span>Comisión</span><b id="sComm">$0</b></div><div class="stat"><span>Promedio</span><b id="sAvg">$0</b></div></div></div>
+</section>
+
+<section id="history" class="page">
+<div class="card"><h2>🧾 Historial</h2><div id="historyList"></div><div class="actions"><button class="secondary" onclick="exportCSV()">Exportar</button><button class="danger" onclick="clearAll()">Borrar todo</button></div></div>
+</section>
+
+<section id="settings" class="page">
+<div class="card"><h2>⚙️ Configuración</h2>
+<label>Porcentaje de comisión</label><input id="rate" type="number" min="0" max="100" step="0.1">
+<label>Meta diaria de comisión ($)</label><input id="goal" type="number" min="0" inputmode="numeric">
+<button onclick="saveSettings()">Guardar configuración</button>
+</div>
+<div class="card"><h2>💵 Precios de servicios</h2><div id="prices"></div><button class="secondary" onclick="savePrices()">Guardar precios</button></div>
+</section>
+</main>
+
+<nav class="nav">
+<button id="n-home" class="active" onclick="show('home')">🏠<br>Inicio</button>
+<button id="n-register" onclick="show('register')">➕<br>Registrar</button>
+<button id="n-stats" onclick="show('stats')">📊<br>Estadísticas</button>
+<button id="n-settings" onclick="show('settings')">⚙️<br>Ajustes</button>
+</nav>
+
+<script>
+const KEY="mi_autolavado_v3_records", SET="mi_autolavado_v3_settings";
+let records=JSON.parse(localStorage.getItem(KEY)||"[]");
+let settings=JSON.parse(localStorage.getItem(SET)||'{"rate":40,"goal":100000,"prices":{"Lavada sencilla":30000,"Lavada completa":50000,"Polichada":80000,"Brillada":60000,"Otro":0}}');
+let period="day";
+function money(n){return "$"+Math.round(n).toLocaleString("es-CO")}
+function key(d){return d.toISOString().slice(0,10)}
+function filtered(p){let now=new Date();return records.filter(x=>{let d=new Date(x.date);if(p==="day")return key(d)===key(now);if(p==="month")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();let s=new Date(now);s.setHours(0,0,0,0);let dow=s.getDay()||7;s.setDate(s.getDate()-(dow-1));return d>=s})}
+function show(id){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));let n=document.getElementById("n-"+id);if(n)n.classList.add("active");render()}
+function setPeriod(p){period=p;["day","week","month"].forEach(x=>document.getElementById("p"+x).classList.toggle("active",x===p));render()}
+function addService(){
+ let value=Number(document.getElementById("value").value);
+ if(!value){alert("Ingresa el valor.");return}
+ let service=document.getElementById("service").value;
+ let plate=document.getElementById("plate").value.trim().toUpperCase();
+ let file=document.getElementById("photo").files[0];
+ const finish=(photo)=>{
+   records.push({id:Date.now(),date:new Date().toISOString(),service,value,
+     commission:value*settings.rate/100,plate,note:document.getElementById("note").value.trim(),photo:photo||""});
+   localStorage.setItem(KEY,JSON.stringify(records));
+   document.getElementById("value").value="";document.getElementById("plate").value="";
+   document.getElementById("note").value="";document.getElementById("photo").value="";
+   document.getElementById("photoPreview").innerHTML="";
+   alert("Servicio guardado.");show("home");
+ };
+ if(file){
+   const reader=new FileReader();
+   reader.onload=()=>finish(reader.result);
+   reader.readAsDataURL(file);
+ }else finish("");
+}
+function saveSettings(){settings.rate=Math.max(0,Math.min(100,Number(document.getElementById("rate").value)||0));settings.goal=Math.max(0,Number(document.getElementById("goal").value)||0);localStorage.setItem(SET,JSON.stringify(settings));alert("Configuración guardada.");render()}
+function savePrices(){document.querySelectorAll("[data-price]").forEach(i=>settings.prices[i.dataset.price]=Number(i.value)||0);localStorage.setItem(SET,JSON.stringify(settings));fillServices();alert("Precios guardados.")}
+function fillServices(){let sel=document.getElementById("service");sel.innerHTML=Object.keys(settings.prices).map(x=>`<option>${esc(x)}</option>`).join("");sel.onchange=()=>updateHint();document.getElementById("rateText").textContent=settings.rate+"%";updateHint();let box=document.getElementById("prices");box.innerHTML=Object.entries(settings.prices).map(([n,v])=>`<div class="price-row"><span>${esc(n)}</span><input data-price="${esc(n)}" type="number" min="0" value="${v}"></div>`).join("")}
+function updateHint(){let n=document.getElementById("service").value,v=settings.prices[n]||0;document.getElementById("priceHint").textContent=v?"Precio sugerido: "+money(v):"Puedes ingresar el precio manualmente.";if(v)document.getElementById("value").value=v;preview()}
+function preview(){let v=Number(document.getElementById("value").value)||0;document.getElementById("preview").textContent=money(v*settings.rate/100)}
+document.getElementById("value").addEventListener("input",preview);
+document.getElementById("photo").addEventListener("change",previewPhoto);
+function previewPhoto(){
+ const f=document.getElementById("photo").files[0], box=document.getElementById("photoPreview");
+ if(!f){box.innerHTML="";return}
+ const u=URL.createObjectURL(f);
+ box.innerHTML='<img src="'+u+'" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:8px">';
+}
+function render(){fillServices();let r=filtered("day"),sales=r.reduce((a,x)=>a+x.value,0),comm=r.reduce((a,x)=>a+x.commission,0);document.getElementById("dCount").textContent=r.length;document.getElementById("dSales").textContent=money(sales);document.getElementById("dComm").textContent=money(comm);document.getElementById("dAvg").textContent=money(r.length?comm/r.length:0);let pct=settings.goal?Math.min(100,comm/settings.goal*100):0;document.getElementById("goalLabel").textContent="Meta: "+money(settings.goal);document.getElementById("goalBar").style.width=pct+"%";document.getElementById("goalText").textContent=settings.goal?(comm>=settings.goal?"🎉 ¡Meta alcanzada!":"Faltan "+money(settings.goal-comm)):"Configura una meta en Ajustes.";let q=filtered(period),sa=q.reduce((a,x)=>a+x.value,0),sc=q.reduce((a,x)=>a+x.commission,0);document.getElementById("sCount").textContent=q.length;document.getElementById("sSales").textContent=money(sa);document.getElementById("sComm").textContent=money(sc);document.getElementById("sAvg").textContent=money(q.length?sc/q.length:0);document.getElementById("rate").value=settings.rate;document.getElementById("goal").value=settings.goal;renderHistory()}
+function renderHistory(){let l=document.getElementById("historyList");if(!records.length){l.innerHTML='<div class="small">No hay servicios registrados.</div>';return}l.innerHTML=records.slice().sort((a,b)=>b.id-a.id).map(x=>`<div class="service">${x.photo?'<img src="'+x.photo+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-bottom:8px">':""}<b>${esc(x.service)}</b> <span class="badge">${money(x.commission)} comisión</span>${x.plate?"<div>🚘 Placa: <b>"+esc(x.plate)+"</b></div>":""}${x.note?"<div>"+esc(x.note)+"</div>":""}<div class="small">${new Date(x.date).toLocaleString("es-CO",{dateStyle:"short",timeStyle:"short"})}</div><div>Valor: <b>${money(x.value)}</b></div><button class="danger" style="width:auto;padding:7px 10px;font-size:13px" onclick="removeItem(${x.id})">Eliminar</button></div>`).join("")}
+function removeItem(id){if(confirm("¿Eliminar este servicio?")){records=records.filter(x=>x.id!==id);localStorage.setItem(KEY,JSON.stringify(records));render()}}
+function clearAll(){if(confirm("¿Borrar todos los registros?")){records=[];localStorage.setItem(KEY,JSON.stringify(records));render()}}
+function exportCSV(){if(!records.length){alert("No hay registros.");return}let csv="Fecha,Servicio,Placa,Valor,Comision,Observacion\n";records.forEach(x=>csv+=`"${new Date(x.date).toLocaleString("es-CO")}","${x.service}","${x.plate||""}",${x.value},${x.commission},"${(x.note||"").replaceAll('"','""')}"\n`);let a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="mi_autolavado_historial.csv";a.click()}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+render();
+</script></body></html>
